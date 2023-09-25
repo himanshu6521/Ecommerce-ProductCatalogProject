@@ -35,6 +35,13 @@ public class ProductAvailabilityResponse {
         this.availableQuantity = availableQuantity;
         this.price = price;
     }
+	public ProductAvailabilityResponse() {
+		// TODO Auto-generated constructor stub
+	}
+	public void setIsProductAvailable(boolean b) {
+		// TODO Auto-generated method stub
+		isProductAvailable=b;
+	}
 
     // Getters and setters (if needed)
 }

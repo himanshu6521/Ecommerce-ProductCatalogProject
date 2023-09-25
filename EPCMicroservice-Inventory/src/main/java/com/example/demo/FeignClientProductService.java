@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 //enabling ribbon  
 @RibbonClient(name="ProductService")
-@FeignClient(name="ProductService") //url = "http://localhost:8081/products")
+@FeignClient(name="ProductService",url = "http://localhost:8081/products")
 public interface FeignClientProductService {
 
 	//create product
@@ -40,6 +40,9 @@ public interface FeignClientProductService {
 	    @GetMapping("/inventory/products/{productId}")
 	    Product getProductById(@PathVariable Long productId);
 
-	    @GetMapping("/inventory/products/getPricebyProductId/{productId}")
-	    Long getPricebyProductId(@PathVariable Long productId);
+	    
+	    //this method is working 
+	    @GetMapping("/getProductPriceByProductId/{productId}")
+	    Long getProductPriceByProductId(@PathVariable("productId") Long productId);
+	
 }

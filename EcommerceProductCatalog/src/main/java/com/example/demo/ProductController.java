@@ -133,8 +133,8 @@ public class ProductController {
 	
 	
 	//method to get product price from productID
-	@GetMapping("/products/getPricebyProductId/{productId}")
-	public Long getProductPrice(@PathVariable Long productId) {
+	@GetMapping("/products/getProductPriceByProductId/{productId}") // Updated path
+	public Long getProductPriceByProductId(@PathVariable Long productId) {
         return productService.getProductPriceByProductId(productId);
         //return ResponseEntity.ok(productPrice);
     }

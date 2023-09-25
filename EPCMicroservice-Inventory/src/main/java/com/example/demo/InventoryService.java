@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import ch.qos.logback.classic.Logger;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -114,10 +116,17 @@ public class InventoryService {
 
 		// http://localhost:8081/products/getPricebyProductId/ , its needs the product
 		// service running
-//		return restTemplateInventory.getForObject("http://localhost:8081/products/getPricebyProductId/" + productId,
-//				Long.class);
 		// Call the Feign Client method instead of using RestTemplate. resttemplate method and feign client both working 
-        return feignClientProductService.getPricebyProductId(productId);
+        //System.out.println("Productid is " +productId);
+		
+//		String productServiceUrl = "http://localhost:8081"; // Update with your actual URL
+//        String endpoint = "/products/getProductPriceByProductId/" + productId;
+//        String fullUrl = productServiceUrl + endpoint;
+//
+//        return restTemplateInventory.getForObject(fullUrl, Long.class);
+		
+		//both feignclient method and resttemplate is now running properly
+		 return feignClientProductService.getProductPriceByProductId(productId);
 	}
 
 }

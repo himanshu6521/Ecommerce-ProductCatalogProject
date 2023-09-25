@@ -17,6 +17,7 @@ import brave.sampler.Sampler;
 @EnableDiscoveryClient
 @EnableFeignClients
 @RibbonClients
+
 public class EpcMicroserviceInventoryApplication {
 
 	public static void main(String[] args) {
@@ -29,8 +30,9 @@ public class EpcMicroserviceInventoryApplication {
 //		return new RestTemplate();
 //	}
 	
-	@Bean(name = "customDefaultSampler") // Rename the bean
-	public Sampler defaultSampler() {
-	    return Sampler.ALWAYS_SAMPLE;
-	}
+//	method realted to tracing 
+	//@Bean(name = "customDefaultSampler") // Rename the bean
+//	public Sampler defaultSampler() {
+//	    return Sampler.ALWAYS_SAMPLE;
+//	}
 }

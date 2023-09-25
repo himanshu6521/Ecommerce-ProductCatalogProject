@@ -1,11 +1,18 @@
 package com.example.demo;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.Responses.ProductAvailabilityResponse;
+
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 
 import java.util.List;
 
@@ -25,6 +32,9 @@ public class InventoryController {
 	public void InventoryController() {
 
 	}
+	
+	//logger
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	// get all inventories
 	@GetMapping
@@ -79,39 +89,80 @@ public class InventoryController {
 	public Long getNumberOfItemsInStock(@PathVariable Long productId) {
 		return inventoryService.getNumberOfItemsInStock(productId);
 	}
-
-	// -------------------------------------
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	int RetryCount=1;
+ 
+	// -------------------------------------BELOW 2 methods show the use of circuit breakers. if 
+ //InvenProdBreaker fails then InvenProdFallback will be called we have return internal server error in fallback
 	@GetMapping("/ProductAvailability/{productId}/{quantity}")
+	@CircuitBreaker(name= "InvenProdBreaker", fallbackMethod="InvenProdFallback")
+	//or
+	@Retry(name= "InvenProductService", fallbackMethod= "InvenProdFallback" )
+	//or
+	
+	@RateLimiter(name = "InvenRateLimiter",fallbackMethod = "InvenProdFallback")
 	public ResponseEntity<ProductAvailabilityResponse> getProductAvailability(
 	    @PathVariable Long productId,
 	    @PathVariable int quantity) {
-	    
+		
+		//to check how much retry are executed
+		logger.info("retry count= {} ", RetryCount);
+		RetryCount++;  
+//		Retryable Exception: Ensure that the exception being thrown in the method is a 
+//		retryable exception. Spring Retry will only retry methods when they throw a specific
+//		set of exceptions (e.g., RuntimeException).  If the exception is not retryable, 
+//		you might need to customize the exception hierarchy. here exception is not handled that why retry is not working 3 times. implementation is right 
+		
 		long temp= quantity;
-		//System.out.println("given quantity is " + quantity);
+		logger.info("given quantity is {}" + quantity);
 	    // Get available quantity from the inventory service
 	    Long availableQuantity = inventoryService.getAvailableQuantity(productId, temp);
-	   // System.out.println("available quantity is " + availableQuantity);
+	    logger.info("available quantity is {} " + availableQuantity);
 	    // Check if the product is available in sufficient quantity
 	    boolean isProductAvailable = availableQuantity >= quantity;
-	   // System.out.println("is product available  " + isProductAvailable);
+	    logger.info("is product available {} " + isProductAvailable);
 	    
 	    // If not available, return a response with isProductAvailable set to false and availableQuantity
 	    if (!isProductAvailable) {
 	        return ResponseEntity.ok(new ProductAvailabilityResponse(false, availableQuantity, 00));
 	    }
-
+	    else {
 	    // If available, get the product price from the inventory service
 	    Long productPrice = inventoryService.getAvailableProductPrice(productId);
-	    System.out.println("product price  " + productPrice);
+	   
 
 	    if(productPrice ==null) { productPrice= 0L;}
-	    
+	    else { productPrice= productPrice * quantity;}
 	    // Create a response with isProductAvailable set to true, availableQuantity, and productPrice
 	    ProductAvailabilityResponse response = new ProductAvailabilityResponse(true, availableQuantity, productPrice);
 
 	    return ResponseEntity.ok(response);
+	    }
 	}
+	
+	//@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) //<<rate limiter related 
+	public ResponseEntity<ProductAvailabilityResponse> InvenProdFallback(Long productId, int quantity, Exception ex) {
+        logger.warn("This method is called from the fallback method of circuit breaker for productId: {}, quantity: {}", productId, quantity);
+
+        // Create a dummy ProductAvailabilityResponse with desired values
+        ProductAvailabilityResponse dummyResponse = new ProductAvailabilityResponse();
+        dummyResponse.setIsProductAvailable(true);
+        dummyResponse.setAvailableQuantity(1L);
+        dummyResponse.setPrice(1L);
+
+        // Return the dummy response
+        return ResponseEntity.ok(dummyResponse);
+    }
+
+	
 //  In this code:
 //We define a ProductController class with a checkProductAvailability method that accepts productId and quantity as path variables.
 //Inside the method, we call the getAvailableQuantity method from the InventoryService to retrieve the available quantity.
@@ -121,6 +172,7 @@ public class InventoryController {
 	
 	//extra method to get inventory obj by productid
 	@GetMapping("/checkAvailability/{productId}/{quantity}")
+
 	public ResponseEntity<Inventory> getAvailabilityById(@PathVariable Long productId, @PathVariable Long quantity) {
 		Inventory inventory = inventoryService.getAvailabilityByProductID(productId);
 		if (inventory != null) {
